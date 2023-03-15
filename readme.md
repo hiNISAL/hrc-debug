@@ -31,12 +31,18 @@ import HRCDebug from 'hrc-debug';
 import { appear } from 'hrc-debug/release/appears/browser';
 
 new HRCDebug({
-  server: 'http://127.0.0.1:3000',
+  // /proxy/console这个接口是默认实现的
+  server: 'http://127.0.0.1:3000/proxy/console',
   appear,
+  // 可以不传递，修改item里的内容，输出到服务端的也会被修改
+  beforeEach(item) {},
 });
 
 // 会在服务端和客户端同时输出
+// 目前代理了 log/warn/error
 console.log('996');
+console.warn('996');
+console.error('996');
 ```
 
 ## 名称由来
