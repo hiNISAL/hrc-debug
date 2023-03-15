@@ -5,6 +5,7 @@ class HRCDebug {
         this.options = options;
         this._console = {};
         this.queue = [];
+        this.timer = null;
         this.consoleRewrite();
     }
     consoleRewrite() {
@@ -12,21 +13,23 @@ class HRCDebug {
         this._console = Object.assign({}, gConsole);
         HRCDebug.rewriteMethods.forEach((methodName) => {
             gConsole[methodName] = (...args) => {
+                clearTimeout(this.timer);
                 this.queue.push({
                     method: methodName,
                     args,
                 });
-                this.appear();
+                this.timer = setTimeout(() => {
+                    this.appear();
+                }, 48);
             };
         });
     }
     appear() {
-        const item = this.queue.pop();
-        if (!item) {
+        const queue = this.queue;
+        if (!queue.length)
             return;
-        }
+        this.queue = [];
         const options = this.options;
-        const queue = [item];
         queue.forEach((item, idx) => {
             if (options.beforeEach) {
                 const returns = options.beforeEach(item);

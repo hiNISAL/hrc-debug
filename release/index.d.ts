@@ -10,6 +10,7 @@ declare class HRCDebug {
     static rewriteMethods: proxyMethods[];
     _console: Console;
     private queue;
+    private timer;
     constructor(options: Options);
     private consoleRewrite;
     private appear;

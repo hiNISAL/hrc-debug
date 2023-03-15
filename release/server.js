@@ -20,7 +20,9 @@ router.post('/proxy/console', (ctx) => {
     ctx.body = '';
 });
 app.use(router.routes());
-exports.default = (config) => {
+exports.default = (config = {
+    port: 3000,
+}) => {
     const { port = 3000 } = config;
     app.listen(port);
 };
