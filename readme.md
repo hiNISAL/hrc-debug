@@ -2,11 +2,11 @@
 
 > 项目构建中
 
-`hrc-debug`可以理解成运行在服务端的console面板。
-
-原理很简单，就是把console.log/console.error等方法要输出的内容以HTTP的形式发送到服务端，服务端来输出。
+`hrc-debug`可以理解成运行在服务端的console面板，把客户端使用`console`输出的内容同步输出到服务端。
 
 目的是为了增加无控制台场景的轻量调试体验，如小程序、手机端浏览器。
+
+原理很简单，就是把console.log/console.error等方法要输出的内容以HTTP的形式发送到服务端，由服务端来输出，也可以做到收集多个客户端的日志数据到服务端。
 
 ## 安装
 
@@ -29,10 +29,13 @@ service({
 // CLIENT
 import HRCDebug from 'hrc-debug';
 import { appear } from 'hrc-debug/release/appears/browser';
+// 微信小程序使用
+// import { appear } from 'hrc-debug/release/appears/miniprogram.wx';
 
 new HRCDebug({
   // /proxy/console这个接口是默认实现的
   server: 'http://127.0.0.1:3000/proxy/console',
+  // 上报时调用的方法，本质就是个函数，完全可以自己实现，会传递过来每一批要上报的数据
   appear,
   // 可以不传递，修改item里的内容，输出到服务端的也会被修改
   beforeEach(item) {},
@@ -44,6 +47,8 @@ console.log('996');
 console.warn('996');
 console.error('996');
 ```
+
+上报会按照48毫秒来防抖，后续会改成节流，万一前端console一直不停，就看不到消息了[狗头]。
 
 ## 名称由来
 
