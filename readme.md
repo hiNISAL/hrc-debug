@@ -18,7 +18,7 @@ npm i hrc-debug
 
 ```typescript
 // SERVER
-import service from 'hrc-debug/server';
+const service = require('hrc-debug/release/server.js').default;
 
 service({
   port: 3000,
@@ -27,10 +27,10 @@ service({
 
 ```typescript
 // CLIENT
-import HRC from 'hrc-debug';
-import { appear } from 'hrc-debug/appears/browser';
+import HRCDebug from 'hrc-debug';
+import { appear } from 'hrc-debug/release/appears/browser';
 
-new HRC({
+new HRCDebug({
   server: 'http://127.0.0.1:3000',
   appear,
 });
