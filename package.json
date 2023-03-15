@@ -1,8 +1,8 @@
 {
   "name": "hrc-debug",
-  "version": "0.0.1",
-  "description": "",
-  "main": "./src/index.ts",
+  "version": "0.0.2",
+  "description": "print debug info to server from client",
+  "main": "./release/index.js",
   "scripts": {
     "test": "jest",
     "dev": "nodemon --exec 'ts-node' ./debug/index.ts",
@@ -13,7 +13,7 @@
     "type": "git",
     "url": "git+https://github.com/hiNISAL/hrc-debug.git"
   },
-  "keywords": [],
+  "keywords": ["mobile console", "debug", "小程序调试", "控制台", "console面板"],
   "author": "ARAM",
   "license": "MIT",
   "bugs": {
