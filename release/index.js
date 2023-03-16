@@ -5,6 +5,10 @@ const getValue = (value) => {
     if (Number.isNaN(value)) {
         return 'NaN___hrc_NaN';
     }
+    // Infinity / -Infinity
+    if ((value === Infinity) || (value === -Infinity)) {
+        return `${value.toString()}___hrc_Infinity`;
+    }
     // undefined
     if (value === undefined) {
         return 'undefined___hrc_Undefined';
