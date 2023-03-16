@@ -74,6 +74,15 @@ class HRCDebug {
         });
     }
     // -------------------------------------------------------------------------
+    // 是否添加到队列
+    checkAddToQueue(first) {
+        const matcher = this.options.filterMatcher;
+        if (matcher) {
+            return first === matcher;
+        }
+        return true;
+    }
+    // -------------------------------------------------------------------------
     // 重写方法
     consoleRewrite() {
         // 全局的console
@@ -83,20 +92,16 @@ class HRCDebug {
             .entries(HRCDebug.nativeConsoleMethodsMap)
             .forEach(([methodName, method]) => {
             gConsole[methodName] = (...args) => {
-                // 丢进上报队列
-                this.queue.push({
-                    method: methodName,
-                    args: this.consoleMethodArgumentsGen(args),
-                    createdAt: Date.now(),
-                    sourceArgs: args,
-                });
-                // 抖一下
-                if (this.timer)
-                    return;
-                this.timer = setTimeout(() => {
+                if (this.checkAddToQueue(args[0])) {
+                    // 丢进上报队列
+                    this.queue.push({
+                        method: methodName,
+                        args: this.consoleMethodArgumentsGen(args),
+                        createdAt: Date.now(),
+                        sourceArgs: args,
+                    });
                     this.appear();
-                    this.timer = null;
-                }, 48); // three frames
+                }
                 // 在客户端输出
                 method.call(gConsole, ...args);
             };
@@ -105,32 +110,38 @@ class HRCDebug {
     // -------------------------------------------------------------------------
     // 上报
     appear() {
-        let queue = this.queue;
-        if (!queue.length)
+        if (this.timer)
             return;
-        this.queue = [];
-        const options = this.options;
-        if (options.filterMatcher) {
-            queue = queue.filter(({ args: [first] }) => {
-                return first === options.filterMatcher;
-            });
-        }
-        // 调用一下钩子
-        if (options.beforeEachQueuePost) {
-            const returns = options.beforeEachQueuePost(queue);
-            if (returns) {
-                queue = returns;
+        this.timer = setTimeout(() => {
+            let queue = this.queue;
+            if (!queue.length) {
+                this.timer = null;
+                return;
             }
-        }
-        // 去掉引用
-        queue.forEach((item) => {
-            delete item.sourceArgs;
-        });
-        // 完了上报
-        options.appear({
-            console: queue,
-            prefix: !!options.filterMatcher,
-        }, options.server);
+            ;
+            this.queue = [];
+            const options = this.options;
+            // 调用一下钩子
+            if (options.beforeEachQueuePost) {
+                const returns = options.beforeEachQueuePost(queue);
+                if (returns) {
+                    queue = returns;
+                }
+            }
+            // 去掉引用
+            queue.forEach((item) => {
+                delete item.sourceArgs;
+            });
+            console.log(queue);
+            // 完了上报
+            options.appear({
+                console: queue,
+                prefix: !!options.filterMatcher,
+            }, options.server).then(() => {
+                this.timer = null;
+                this.appear();
+            });
+        }, 166);
     }
 }
 // -------------------------------------------------------------------------
@@ -153,7 +164,7 @@ HRCDebug.nativeConsoleMethodsMap = HRCDebug
 // 默认配置项
 HRCDebug.defaultOptions = {
     server: '',
-    appear: () => { },
+    appear: () => Promise.resolve(),
     filterMatcher: '',
 };
 exports.default = HRCDebug;

@@ -1,6 +1,6 @@
 import { LogQueueItem, proxyMethods, AppearData } from './interface.common';
 
-type Appear = (data: AppearData, server: string) => void;
+type Appear = (data: AppearData, server: string) => Promise<void>;
 
 interface Options {
   server: string;
@@ -84,7 +84,7 @@ class HRCDebug {
   // 默认配置项
   static defaultOptions: Options = {
     server: '',
-    appear: () => {},
+    appear: () => Promise.resolve(),
     filterMatcher: '',
   };
 
@@ -129,6 +129,17 @@ class HRCDebug {
   }
 
   // -------------------------------------------------------------------------
+  // 是否添加到队列
+  private checkAddToQueue(first: unknown): boolean {
+    const matcher = this.options.filterMatcher;
+    if (matcher) {
+      return first === matcher;
+    }
+
+    return true;
+  }
+
+  // -------------------------------------------------------------------------
   // 重写方法
   private consoleRewrite() {
     // 全局的console
@@ -139,20 +150,17 @@ class HRCDebug {
       .entries(HRCDebug.nativeConsoleMethodsMap)
       .forEach(([methodName, method]) => {
         gConsole[methodName as proxyMethods] = (...args: any[]) => {
-          // 丢进上报队列
-          this.queue.push({
-            method: methodName as proxyMethods,
-            args: this.consoleMethodArgumentsGen(args),
-            createdAt: Date.now(),
-            sourceArgs: args,
-          });
+          if (this.checkAddToQueue(args[0])) {
+            // 丢进上报队列
+            this.queue.push({
+              method: methodName as proxyMethods,
+              args: this.consoleMethodArgumentsGen(args),
+              createdAt: Date.now(),
+              sourceArgs: args,
+            });
 
-          // 抖一下
-          if (this.timer) return;
-          this.timer = setTimeout(() => {
             this.appear();
-            this.timer = null;
-          }, 48); // three frames
+          }
 
           // 在客户端输出
           method.call(gConsole, ...args);
@@ -163,39 +171,45 @@ class HRCDebug {
   // -------------------------------------------------------------------------
   // 上报
   private appear() {
-    let queue = this.queue;
+    if (this.timer) return;
 
-    if (!queue.length) return;
+    this.timer = setTimeout(() => {
+      let queue = this.queue;
 
-    this.queue = [];
+      if (!queue.length) {
+        this.timer = null;
+        return;
+      };
 
-    const options = this.options;
+      this.queue = [];
 
-    if (options.filterMatcher) {
-      queue = queue.filter(({ args: [first] }) => {
-        return first === options.filterMatcher;
-      });
-    }
+      const options = this.options;
 
-    // 调用一下钩子
-    if (options.beforeEachQueuePost) {
-      const returns = options.beforeEachQueuePost(queue);
+      // 调用一下钩子
+      if (options.beforeEachQueuePost) {
+        const returns = options.beforeEachQueuePost(queue);
 
-      if (returns) {
-        queue = returns;
+        if (returns) {
+          queue = returns;
+        }
       }
-    }
 
-    // 去掉引用
-    queue.forEach((item) => {
-      delete item.sourceArgs;
-    });
+      // 去掉引用
+      queue.forEach((item) => {
+        delete item.sourceArgs;
+      });
 
-    // 完了上报
-    options.appear({
-      console: queue,
-      prefix: !!options.filterMatcher,
-    }, options.server);
+      console.log(queue);
+
+      // 完了上报
+      options.appear({
+        console: queue,
+        prefix: !!options.filterMatcher,
+      }, options.server).then(() => {
+        this.timer = null;
+        this.appear();
+      });
+    }, 166);
   }
 }
 
