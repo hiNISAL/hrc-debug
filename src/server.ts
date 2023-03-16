@@ -4,7 +4,7 @@ import { koaBody } from 'koa-body';
 import Cors from 'koa-cors';
 import { LogQueueItem } from './interface.common';
 
-const server = (route = '/proxy/console', beforeOutput) => {
+const server = (route = '/proxy/console', beforeOutput: Function) => {
   const app = new Koa();
 
   app.use(Cors());

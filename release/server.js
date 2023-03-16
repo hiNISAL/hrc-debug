@@ -7,7 +7,7 @@ const koa_1 = __importDefault(require("koa"));
 const koa_router_1 = __importDefault(require("koa-router"));
 const koa_body_1 = require("koa-body");
 const koa_cors_1 = __importDefault(require("koa-cors"));
-const server = (route = '/proxy/console') => {
+const server = (route = '/proxy/console', beforeOutput) => {
     const app = new koa_1.default();
     app.use((0, koa_cors_1.default)());
     app.use((0, koa_body_1.koaBody)());
@@ -19,6 +19,9 @@ const server = (route = '/proxy/console') => {
             if (prefix) {
                 item.args.shift();
             }
+            if (beforeOutput) {
+                beforeOutput(item);
+            }
             console[item.method](...item.args);
         });
         ctx.body = '';
@@ -29,8 +32,9 @@ const server = (route = '/proxy/console') => {
 exports.default = (config = {
     port: 3000,
     route: '/proxy/console',
+    beforeOutput: () => { },
 }) => {
     const { port = 3000 } = config;
-    const app = server(config.route);
+    const app = server(config.route, config.beforeOutput);
     app.listen(port);
 };
