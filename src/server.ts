@@ -51,7 +51,7 @@ export default (config: {
 }) => {
   const { port = 3000 } = config;
 
-  const app = server(config.route, config.beforeOutput);
+  const app = server(config.route, config.beforeOutput!);
 
   app.listen(port);
 };
