@@ -88,6 +88,10 @@ console.log({
 }
 ```
 
+## TIP
+
+**do not used at production env***.
+
 ## NAMED FROM
 
 HRC mean `HTTP Remote Communication`，tis from `IPC`.
