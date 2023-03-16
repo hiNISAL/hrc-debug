@@ -7,7 +7,9 @@ declare global {
 export const appear = (log: LogQueueItem[], server: string) => {
   wx.request({
     url: server,
-    data: log,
+    data: {
+      console: log,
+    },
     method: 'POST',
     header: {
       'content-type': 'application/json',
