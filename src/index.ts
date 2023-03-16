@@ -75,26 +75,28 @@ class HRCDebug {
     const gConsole: Console = globalThis.console;
 
     // 从映射表取并复写
-    Object.entries(HRCDebug.nativeConsoleMethodsMap).forEach(([methodName, method]) => {
-      gConsole[methodName as proxyMethods] = (...args: any[]) => {
-        // 丢进上报队列
-        this.queue.push({
-          method: methodName as proxyMethods,
-          args,
-          createdAt: Date.now(),
-        });
+    Object
+      .entries(HRCDebug.nativeConsoleMethodsMap)
+      .forEach(([methodName, method]) => {
+        gConsole[methodName as proxyMethods] = (...args: any[]) => {
+          // 丢进上报队列
+          this.queue.push({
+            method: methodName as proxyMethods,
+            args,
+            createdAt: Date.now(),
+          });
 
-        // 抖一下
-        if (this.timer) return;
-        this.timer = setTimeout(() => {
-          this.appear();
-          this.timer = null;
-        }, 48); // three frames
+          // 抖一下
+          if (this.timer) return;
+          this.timer = setTimeout(() => {
+            this.appear();
+            this.timer = null;
+          }, 48); // three frames
 
-        // 在客户端输出
-        method.call(gConsole, ...args);
-      };
-    });
+          // 在客户端输出
+          method.call(gConsole, ...args);
+        };
+      });
   }
 
   // -------------------------------------------------------------------------

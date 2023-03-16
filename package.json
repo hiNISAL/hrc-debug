@@ -1,6 +1,6 @@
 {
   "name": "hrc-debug",
-  "version": "0.0.6",
+  "version": "1.0.0",
   "description": "print debug info to server from client",
   "main": "./release/index.js",
   "scripts": {
