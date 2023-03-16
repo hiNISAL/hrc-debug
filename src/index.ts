@@ -3,46 +3,104 @@ import { LogQueueItem, proxyMethods } from './interface.common';
 type Appear = (queue: LogQueueItem[], server: string) => void;
 
 interface Options {
-  server: string,
-  appear: Appear,
-  beforeEach?: (log: LogQueueItem) => void|LogQueueItem;
+  server: string;
+  appear: Appear;
+  beforeEachQueuePost?: (queue: LogQueueItem[]) => void|LogQueueItem[];
+  filterMatcher?: string,
 }
 
 class HRCDebug {
+  // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
+  // STATIC
+  // -------------------------------------------------------------------------
+
+  // -------------------------------------------------------------------------
+  // 重写的方法列表
   static rewriteMethods: proxyMethods[] = ['log', 'warn', 'error'];
 
-  public _console: Console = {} as Console;
+  // -------------------------------------------------------------------------
+  // 重写方法的原生方法映射表，保留原始方法
+  static nativeConsoleMethodsMap: Record<proxyMethods, Function> = HRCDebug
+    .rewriteMethods
+    .reduce((obj, methodName) => {
+      obj[methodName] = globalThis.console[methodName];
+    }, {} as any);
 
+  // -------------------------------------------------------------------------
+  // 默认配置项
+  static defaultOptions: Options = {
+    server: '',
+    appear: () => {},
+    filterMatcher: '',
+  };
+
+  // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
+  // PROPS
+  // -------------------------------------------------------------------------
+
+  // -------------------------------------------------------------------------
+  // log队列
   private queue: LogQueueItem[] = [];
 
+  // -------------------------------------------------------------------------
+  // 上报节流定时器
   private timer: unknown = null;
 
+  // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
+  // constructor
+  // -------------------------------------------------------------------------
+
   constructor(public readonly options: Options) {
+    this.options = Object.assign(HRCDebug.defaultOptions, options);
+
     this.consoleRewrite();
   }
 
+  // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
+  // METHODS
+  // -------------------------------------------------------------------------
+
+  // -------------------------------------------------------------------------
+  // 重写方法
   private consoleRewrite() {
-    const gConsole = globalThis.console;
+    // 全局的console
+    const gConsole: Console = globalThis.console;
 
-    this._console = { ...gConsole };
-
-    HRCDebug.rewriteMethods.forEach((methodName: proxyMethods) => {
-      gConsole[methodName] = (...args) => {
-        clearTimeout(this.timer as number);
+    // 从映射表取并复写
+    Object.entries(HRCDebug.nativeConsoleMethodsMap).forEach(([methodName, method]) => {
+      gConsole[methodName as proxyMethods] = (...args: any[]) => {
+        // 丢进上报队列
         this.queue.push({
-          method: methodName,
+          method: methodName as proxyMethods,
           args,
+          createdAt: Date.now(),
         });
 
+        // 抖一下
+        if (this.timer) return;
         this.timer = setTimeout(() => {
           this.appear();
-        }, 48);
+          this.timer = null;
+        }, 48); // three frames
+
+        // 在客户端输出
+        method.call(gConsole, ...args);
       };
     });
   }
 
+  // -------------------------------------------------------------------------
+  // 上报
   private appear() {
-    const queue = this.queue;
+    let queue = this.queue;
 
     if (!queue.length) return;
 
@@ -50,20 +108,22 @@ class HRCDebug {
 
     const options = this.options;
 
-    queue.forEach((item, idx) => {
-      if (options.beforeEach) {
-        const returns = options.beforeEach(item);
+    if (options.filterMatcher) {
+      queue = queue.filter(({ args: [first] }) => {
+        return first === options.filterMatcher;
+      });
+    }
 
-        if (returns) {
-          queue[idx] = returns;
-        }
+    // 调用一下钩子
+    if (options.beforeEachQueuePost) {
+      const returns = options.beforeEachQueuePost(queue);
+
+      if (returns) {
+        queue = returns;
       }
-    });
+    }
 
-    queue.forEach((item) => {
-      this._console[item.method](`[${item.method}]`, ...item.args);
-    });
-
+    // 完了上报
     options.appear(queue, options.server);
   }
 }

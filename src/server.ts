@@ -4,35 +4,43 @@ import { koaBody } from 'koa-body';
 import Cors from 'koa-cors';
 import { LogQueueItem } from './interface.common';
 
-const app = new Koa();
+const server = (route = '/proxy/console') => {
+  const app = new Koa();
 
-app.use(Cors());
-app.use(koaBody());
+  app.use(Cors());
+  app.use(koaBody());
 
-const router = new Router();
+  const router = new Router();
 
-router.post('/proxy/console', (ctx) => {
-  const body = ctx.request.body;
+  router.post(route, (ctx) => {
+    const body = ctx.request.body;
 
-  const {
-    console: _console = [],
-  } = body;
+    const {
+      console: _console = [],
+    } = body;
 
-  _console.forEach((item: LogQueueItem) => {
-    console[item.method](...item.args);
+    _console.forEach((item: LogQueueItem) => {
+      console[item.method](...item.args);
+    });
+
+    ctx.body = '';
   });
 
-  ctx.body = '';
-});
+  app.use(router.routes());
 
-app.use(router.routes());
+  return app;
+};
 
 export default (config: {
   port: number;
+  route?: string;
 } = {
   port: 3000,
+  route: '/proxy/console',
 }) => {
   const { port = 3000 } = config;
+
+  const app = server(config.route);
 
   app.listen(port);
 };
