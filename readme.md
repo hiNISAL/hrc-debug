@@ -1,5 +1,7 @@
 # hrc-debug
 
+🇨🇳[中文](https://github.com/hiNISAL/hrc-debug#hrc-debug) | [ENGLISH](https://github.com/hiNISAL/hrc-debug/blob/main/readme-en.md)
+
 `hrc-debug`可以理解成运行在服务端的console面板，把客户端使用`console`输出的内容同步输出到服务端。
 
 目的是为了增加无控制台场景的轻量调试体验，如小程序、手机端浏览器。
@@ -22,6 +24,8 @@ service({
   port: 3000,
   // 默认可以不传
   route: '/proxy/console',
+  // 输出前调用, 可以不传
+  beforeOutput: (...args) => {},
 });
 ```
 
@@ -50,7 +54,47 @@ console.warn('996');
 console.error('996');
 ```
 
-上报会按照300毫秒节流，在大量请求的情况下暂时不保证时序，所以有可能后发起的LOG比前一批先输出。
+上报会按照166毫秒节流，理论上讲可以保证时序。
+
+## 数据类型支持
+
+客户端和服务端交互才用JSON，非JSON标准的类型是会被JSON过滤的，所以在数据添加到上报队列前会做处理。
+
+目前对以下数据做了处理：
+
+- NaN
+- Infinity / -Infinity
+- String
+- Number
+- Boolean
+- BigInt
+- Symbol
+- Function
+- null
+- Undefined
+- Object
+
+非标准JSON的数据会被加上`___hrc_$TYPE`的后缀，比如：
+
+```js
+// CLIENT
+console.log({
+  a: 123n,
+  b: Symbol('88'),
+  c: undefined,
+  d: 996,
+});
+
+// SERVER
+{
+  a: '123n___hrc_BigInt',
+  b: 'Symbol(88)___hrc_Symbol',
+  c: 'undefined___hrc_Undefined',
+  d: 996,
+}
+```
+
+对象中的属性互递归的做处理。
 
 ## 名称由来
 
