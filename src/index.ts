@@ -26,6 +26,8 @@ class HRCDebug {
     .rewriteMethods
     .reduce((obj, methodName) => {
       obj[methodName] = globalThis.console[methodName];
+
+      return obj;
     }, {} as any);
 
   // -------------------------------------------------------------------------

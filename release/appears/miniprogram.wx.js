@@ -4,7 +4,9 @@ exports.appear = void 0;
 const appear = (log, server) => {
     wx.request({
         url: server,
-        data: log,
+        data: {
+            console: log,
+        },
         method: 'POST',
         header: {
             'content-type': 'application/json',
