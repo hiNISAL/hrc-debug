@@ -1,12 +1,62 @@
-import { LogQueueItem, proxyMethods } from './interface.common';
+import { LogQueueItem, proxyMethods, AppearData } from './interface.common';
 
-type Appear = (queue: LogQueueItem[], server: string) => void;
+type Appear = (data: AppearData, server: string) => void;
 
 interface Options {
   server: string;
   appear: Appear;
   beforeEachQueuePost?: (queue: LogQueueItem[]) => void|LogQueueItem[];
   filterMatcher?: string,
+}
+
+const getValue = (value: unknown): unknown => {
+  // NaN
+  if (Number.isNaN(value)) {
+    return 'NaN___hrc_NaN';
+  }
+
+  // undefined
+  if (value === undefined) {
+    return 'undefined___hrc_Undefined';
+  }
+
+  // 基本类型
+  if (['string', 'number', 'boolean'].includes(typeof value)) {
+    return value;
+  }
+
+  // bigint
+  if (typeof value === 'bigint') {
+    return `${value.toString()}n___hrc_BigInt`;
+  }
+
+  // symbol
+  if (typeof value === 'symbol') {
+    return `${value.toString()}___hrc_Symbol`;
+  }
+
+  // function
+  if (typeof value === 'function') {
+    return `${value.toString()}___hrc_Function`;
+  }
+
+  // null
+  if (value === null) {
+    return null;
+  }
+
+  // object
+  if (typeof value === 'object') {
+    const obj: Record<string, unknown> = {};
+
+    Object.entries(value).forEach(([k, v]) => {
+      obj[k] = getValue(v);
+    });
+
+    return obj;
+  }
+
+  return value;
 }
 
 class HRCDebug {
@@ -71,6 +121,14 @@ class HRCDebug {
   // -------------------------------------------------------------------------
 
   // -------------------------------------------------------------------------
+  // 清洗数据
+  private consoleMethodArgumentsGen(args: unknown[]) {
+    return args.map((item) => {
+      return getValue(item);
+    });
+  }
+
+  // -------------------------------------------------------------------------
   // 重写方法
   private consoleRewrite() {
     // 全局的console
@@ -84,8 +142,9 @@ class HRCDebug {
           // 丢进上报队列
           this.queue.push({
             method: methodName as proxyMethods,
-            args,
+            args: this.consoleMethodArgumentsGen(args),
             createdAt: Date.now(),
+            sourceArgs: args,
           });
 
           // 抖一下
@@ -127,8 +186,16 @@ class HRCDebug {
       }
     }
 
+    // 去掉引用
+    queue.forEach((item) => {
+      delete item.sourceArgs;
+    });
+
     // 完了上报
-    options.appear(queue, options.server);
+    options.appear({
+      console: queue,
+      prefix: !!options.filterMatcher,
+    }, options.server);
   }
 }
 

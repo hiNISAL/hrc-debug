@@ -1,2 +1,2 @@
-import { LogQueueItem } from '../interface.common';
-export declare const appear: (log: LogQueueItem[], server: string) => void;
+import { AppearData } from "../interface.common";
+export declare const appear: (data: AppearData, server: string) => void;

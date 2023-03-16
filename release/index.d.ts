@@ -1,5 +1,5 @@
-import { LogQueueItem, proxyMethods } from './interface.common';
-type Appear = (queue: LogQueueItem[], server: string) => void;
+import { LogQueueItem, proxyMethods, AppearData } from './interface.common';
+type Appear = (data: AppearData, server: string) => void;
 interface Options {
     server: string;
     appear: Appear;
@@ -14,6 +14,7 @@ declare class HRCDebug {
     private queue;
     private timer;
     constructor(options: Options);
+    private consoleMethodArgumentsGen;
     private consoleRewrite;
     private appear;
 }

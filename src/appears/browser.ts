@@ -1,11 +1,9 @@
-import { LogQueueItem } from '../interface.common';
+import { LogQueueItem, AppearData } from "../interface.common";
 
-export const appear = (log: LogQueueItem[], server: string) => {
+export const appear = (data: AppearData, server: string) => {
   fetch(server, {
     method: 'POST',
-    body: JSON.stringify({
-      console: log,
-    }),
+    body: JSON.stringify(data),
     headers: {
       'Content-Type': 'application/json',
     },

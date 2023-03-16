@@ -1,12 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.appear = void 0;
-const appear = (log, server) => {
+const appear = (data, server) => {
     fetch(server, {
         method: 'POST',
-        body: JSON.stringify({
-            console: log,
-        }),
+        body: JSON.stringify(data),
         headers: {
             'Content-Type': 'application/json',
         },

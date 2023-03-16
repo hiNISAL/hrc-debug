@@ -14,8 +14,11 @@ const server = (route = '/proxy/console') => {
     const router = new koa_router_1.default();
     router.post(route, (ctx) => {
         const body = ctx.request.body;
-        const { console: _console = [], } = body;
+        const { console: _console = [], prefix = false, } = body;
         _console.forEach((item) => {
+            if (prefix) {
+                item.args.shift();
+            }
             console[item.method](...item.args);
         });
         ctx.body = '';

@@ -1,5 +1,44 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const getValue = (value) => {
+    // NaN
+    if (Number.isNaN(value)) {
+        return 'NaN___hrc_NaN';
+    }
+    // undefined
+    if (value === undefined) {
+        return 'undefined___hrc_Undefined';
+    }
+    // 基本类型
+    if (['string', 'number', 'boolean'].includes(typeof value)) {
+        return value;
+    }
+    // bigint
+    if (typeof value === 'bigint') {
+        return `${value.toString()}n___hrc_BigInt`;
+    }
+    // symbol
+    if (typeof value === 'symbol') {
+        return `${value.toString()}___hrc_Symbol`;
+    }
+    // function
+    if (typeof value === 'function') {
+        return `${value.toString()}___hrc_Function`;
+    }
+    // null
+    if (value === null) {
+        return null;
+    }
+    // object
+    if (typeof value === 'object') {
+        const obj = {};
+        Object.entries(value).forEach(([k, v]) => {
+            obj[k] = getValue(v);
+        });
+        return obj;
+    }
+    return value;
+};
 class HRCDebug {
     // -------------------------------------------------------------------------
     // -------------------------------------------------------------------------
@@ -28,6 +67,13 @@ class HRCDebug {
     // METHODS
     // -------------------------------------------------------------------------
     // -------------------------------------------------------------------------
+    // 清洗数据
+    consoleMethodArgumentsGen(args) {
+        return args.map((item) => {
+            return getValue(item);
+        });
+    }
+    // -------------------------------------------------------------------------
     // 重写方法
     consoleRewrite() {
         // 全局的console
@@ -40,8 +86,9 @@ class HRCDebug {
                 // 丢进上报队列
                 this.queue.push({
                     method: methodName,
-                    args,
+                    args: this.consoleMethodArgumentsGen(args),
                     createdAt: Date.now(),
+                    sourceArgs: args,
                 });
                 // 抖一下
                 if (this.timer)
@@ -75,8 +122,15 @@ class HRCDebug {
                 queue = returns;
             }
         }
+        // 去掉引用
+        queue.forEach((item) => {
+            delete item.sourceArgs;
+        });
         // 完了上报
-        options.appear(queue, options.server);
+        options.appear({
+            console: queue,
+            prefix: !!options.filterMatcher,
+        }, options.server);
     }
 }
 // -------------------------------------------------------------------------
@@ -93,6 +147,7 @@ HRCDebug.nativeConsoleMethodsMap = HRCDebug
     .rewriteMethods
     .reduce((obj, methodName) => {
     obj[methodName] = globalThis.console[methodName];
+    return obj;
 }, {});
 // -------------------------------------------------------------------------
 // 默认配置项

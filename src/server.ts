@@ -17,9 +17,13 @@ const server = (route = '/proxy/console') => {
 
     const {
       console: _console = [],
+      prefix = false,
     } = body;
 
     _console.forEach((item: LogQueueItem) => {
+      if (prefix) {
+        item.args.shift();
+      }
       console[item.method](...item.args);
     });
 
