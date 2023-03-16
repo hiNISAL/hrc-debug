@@ -22,6 +22,8 @@ const service = require('hrc-debug/release/server.js').default;
 
 service({
   port: 3000,
+  // 默认可以不传
+  route: '/proxy/console',
 });
 ```
 
@@ -38,7 +40,9 @@ new HRCDebug({
   // 上报时调用的方法，本质就是个函数，完全可以自己实现，会传递过来每一批要上报的数据
   appear,
   // 可以不传递，修改item里的内容，输出到服务端的也会被修改
-  beforeEach(item) {},
+  beforeEachQueuePost(chunk) {},
+  // 如果配置了，会匹配log/warn/error等第一个参数，完全匹配才会发送
+  filterMatcher: '__hrc',
 });
 
 // 会在服务端和客户端同时输出
@@ -48,7 +52,7 @@ console.warn('996');
 console.error('996');
 ```
 
-上报会按照48毫秒来防抖，后续会改成节流，万一前端console一直不停，就看不到消息了[狗头]。
+上报会按照48毫秒（3帧）来防抖，后续会改成节流，万一前端console一直不停，就看不到消息了[狗头]。
 
 ## 名称由来
 
