@@ -204,8 +204,6 @@ class HRCDebug {
         delete item.sourceArgs;
       });
 
-      console.log(queue);
-
       // 完了上报
       options.appear({
         console: queue,
