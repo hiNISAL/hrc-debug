@@ -17,6 +17,7 @@ npm i hrc-debug
 
 ```typescript
 // SERVER
+// nodejs http server, need run this script by `node` command
 const service = require('hrc-debug/release/server.js').default;
 
 service({

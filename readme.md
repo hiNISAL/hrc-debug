@@ -18,6 +18,7 @@ npm i hrc-debug -D
 
 ```typescript
 // SERVER
+// 是一个node服务，需要手动用node执行
 const service = require('hrc-debug/release/server.js').default;
 
 service({
