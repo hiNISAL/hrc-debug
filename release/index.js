@@ -136,7 +136,6 @@ class HRCDebug {
             queue.forEach((item) => {
                 delete item.sourceArgs;
             });
-            console.log(queue);
             // 完了上报
             options.appear({
                 console: queue,
